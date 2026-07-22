@@ -557,7 +557,8 @@ with tab2:
     seed = cB.number_input("Random seed", 1, 999, 42)
     G, table = build_rings(n_rings, seed)
 
-    pos = nx.spring_layout(G, k=0.45, seed=7, iterations=80)
+    pos_raw = nx.spring_layout(G, k=0.45, seed=7, iterations=80)
+    pos = {n: (float(xy[0]), float(xy[1])) for n, xy in pos_raw.items()}
     KIND = {"victim":  dict(color=C["blue"],   size=9,  name="Victim"),
             "scammer": dict(color=C["danger"], size=15, name="Scammer number"),
             "mule":    dict(color=C["warn"],   size=13, name="Mule account"),
@@ -576,7 +577,7 @@ with tab2:
             marker=dict(color=s["color"], size=s["size"],
                         line=dict(color=C["bg"], width=1.5),
                         opacity=0.95),
-            text=[f"{n}<br>Ring {G.nodes[n]['ring']} · degree {G.degree(n)}" for n in ns],
+            text=[f"{n}<br>Ring {G.nodes[n]['ring']} · degree {int(G.degree(n))}" for n in ns],
             hoverinfo="text"))
     fig.update_layout(showlegend=True, xaxis=dict(visible=False), yaxis=dict(visible=False))
     st.plotly_chart(style(fig, 520), use_container_width=True)
@@ -620,7 +621,7 @@ with tab3:
         st.markdown('<div class="sec">Complaint pressure per day</div>', unsafe_allow_html=True)
         daily = live.groupby(live["date"].dt.date).size().reset_index(name="n")
         fig = go.Figure(go.Scatter(
-            x=daily["date"], y=daily["n"], mode="lines",
+            x=daily["date"].astype(str).tolist(), y=daily["n"].astype(int).tolist(), mode="lines",
             line=dict(color=C["cyan"], width=2.5, shape="spline"),
             fill="tozeroy", fillcolor="rgba(196,43,28,0.10)"))
         st.plotly_chart(style(fig, 300), use_container_width=True)
@@ -628,7 +629,7 @@ with tab3:
         st.markdown('<div class="sec">Scam type share</div>', unsafe_allow_html=True)
         mix = live.groupby("scam_type")["amount"].sum().reset_index()
         fig = go.Figure(go.Pie(
-            labels=mix["scam_type"], values=mix["amount"], hole=0.62,
+            labels=mix["scam_type"].astype(str).tolist(), values=mix["amount"].astype(float).tolist(), hole=0.62,
             marker=dict(colors=[C["danger"], C["warn"], C["blue"], C["violet"], C["safe"]],
                         line=dict(color=C["bg"], width=2)),
             textfont=dict(family="Inter", color=C["text"])))
@@ -639,8 +640,8 @@ with tab3:
     st.markdown('<div class="sec">Amount defrauded by city</div>', unsafe_allow_html=True)
     city = live.groupby("city")["amount"].sum().sort_values().reset_index()
     fig = go.Figure(go.Bar(
-        x=city["amount"]/1e5, y=city["city"], orientation="h",
-        marker=dict(color=city["amount"], colorscale=[[0, "rgba(196,43,28,0.5)"], [1, C["danger"]]]),
+        x=(city["amount"]/1e5).astype(float).tolist(), y=city["city"].astype(str).tolist(), orientation="h",
+        marker=dict(color=city["amount"].astype(float).tolist(), colorscale=[[0, "rgba(196,43,28,0.5)"], [1, C["danger"]]]),
         text=[f"₹{v/1e5:.1f} L" for v in city["amount"]], textposition="outside",
         textfont=dict(family="JetBrains Mono", size=11)))
     fig.update_layout(xaxis_title="₹ lakh")
@@ -735,9 +736,9 @@ with tab4:
     with b:
         st.markdown('<div class="sec">Score separation — safe vs scam</div>', unsafe_allow_html=True)
         fig = go.Figure()
-        fig.add_trace(go.Histogram(x=bench[bench.label == 0]["score"], name="Safe messages",
+        fig.add_trace(go.Histogram(x=bench[bench.label == 0]["score"].astype(int).tolist(), name="Safe messages",
                                    marker_color="rgba(29,78,137,0.6)", nbinsx=25))
-        fig.add_trace(go.Histogram(x=bench[bench.label == 1]["score"], name="Scam messages",
+        fig.add_trace(go.Histogram(x=bench[bench.label == 1]["score"].astype(int).tolist(), name="Scam messages",
                                    marker_color="rgba(166,27,27,0.75)", nbinsx=25))
         fig.add_vline(x=thr, line=dict(color=C["warn"], dash="dash"),
                       annotation_text="threshold", annotation_font_color=C["warn"])
@@ -900,21 +901,24 @@ with tab_geo:
 
     fig = go.Figure()
     fig.add_trace(go.Scattergeo(
-        lat=agg["lat"], lon=agg["lon"], name="Fraud complaints",
-        mode="markers+text", text=agg["city"], textposition="top center",
+        lat=agg["lat"].astype(float).tolist(), lon=agg["lon"].astype(float).tolist(),
+        name="Fraud complaints",
+        mode="markers+text", text=agg["city"].astype(str).tolist(), textposition="top center",
         textfont=dict(family="Inter", size=11, color=C["muted"]),
-        marker=dict(size=np.sqrt(agg["n"]) * 3.2, color=agg["amt"],
+        marker=dict(size=(np.sqrt(agg["n"]) * 3.2).astype(float).tolist(),
+                    color=agg["amt"].astype(float).tolist(),
                     colorscale=[[0, "rgba(29,78,137,0.60)"], [1, "rgba(166,27,27,0.95)"]],
                     line=dict(color=C["bg"], width=1),
                     colorbar=dict(title="₹ at risk", tickfont=dict(color=C["muted"]))),
-        hovertext=[f"{r.city}<br>{r.n} complaints · ₹{r.amt/1e5:.1f} L" for r in agg.itertuples()],
+        hovertext=[f"{r.city}<br>{int(r.n)} complaints · ₹{r.amt/1e5:.1f} L" for r in agg.itertuples()],
         hoverinfo="text"))
     fig.add_trace(go.Scattergeo(
-        lat=seiz["lat"], lon=seiz["lon"], name="FICN seizure points",
+        lat=seiz["lat"].astype(float).tolist(), lon=seiz["lon"].astype(float).tolist(),
+        name="FICN seizure points",
         mode="markers",
         marker=dict(symbol="diamond", size=9, color=C["warn"],
                     line=dict(color=C["bg"], width=1)),
-        hovertext=[f"FICN seizure · {r.notes} notes · near {r.city}" for r in seiz.itertuples()],
+        hovertext=[f"FICN seizure · {int(r.notes)} notes · near {r.city}" for r in seiz.itertuples()],
         hoverinfo="text"))
     fig.update_geos(
         scope="asia", lataxis_range=[6, 36], lonaxis_range=[66, 98],
