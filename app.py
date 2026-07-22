@@ -15,7 +15,7 @@ import pandas as pd
 import networkx as nx
 import plotly.graph_objects as go
 import streamlit as st
-from PIL import Image
+from PIL import Image, ImageDraw
 
 # ============================================================================
 # PAGE CONFIG
@@ -30,110 +30,109 @@ st.set_page_config(
 # DESIGN TOKENS + CSS
 # ============================================================================
 C = {
-    "bg":     "#070B14",
-    "card":   "#0E1526",
-    "card2":  "#121B31",
-    "border": "#1C2740",
-    "cyan":   "#22D3EE",
-    "danger": "#FB4D6D",
-    "warn":   "#F5A524",
-    "safe":   "#34D399",
-    "text":   "#E9EEF7",
-    "muted":  "#8A94AC",
-    "blue":   "#5B8DEF",
-    "violet": "#A78BFA",
+    "bg":     "#FBF0E4",   # ET salmon paper
+    "card":   "#FFFFFF",
+    "card2":  "#FFF8EF",
+    "border": "#E8D5BF",
+    "cyan":   "#C42B1C",   # ET editorial red (brand accent — key name kept for compatibility)
+    "danger": "#A61B1B",   # deep crimson for verdicts
+    "warn":   "#B25E00",   # amber ink
+    "safe":   "#1E7F4F",   # market green
+    "text":   "#211A12",   # newsprint ink
+    "muted":  "#7A6A58",   # warm grey
+    "blue":   "#1D4E89",   # financial navy
+    "violet": "#6D4C9F",
 }
 
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+Telugu:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+Telugu:wght@400;600&display=swap');
 
 html, body, [class*="css"] {{ font-family: 'Inter','Noto Sans Devanagari','Noto Sans Telugu',sans-serif; }}
 .stApp {{ background: {C['bg']}; }}
-h1,h2,h3 {{ font-family:'Space Grotesk',sans-serif !important; letter-spacing:-0.02em; }}
+h1,h2,h3 {{ font-family:'Playfair Display',serif !important; letter-spacing:-0.01em; color:{C['text']}; }}
 #MainMenu, footer, header {{ visibility:hidden; }}
 
-/* ---- Hero with tricolor signature strip ---- */
+/* ---- Masthead hero: newspaper front page ---- */
 .hero {{
-    position:relative; border-radius:20px; overflow:hidden;
-    background: radial-gradient(900px 260px at 12% -30%, rgba(34,211,238,0.16), transparent),
-                linear-gradient(135deg,#101A33 0%,#0A1122 100%);
+    position:relative; border-radius:6px; overflow:hidden;
+    background: {C['card']};
     border:1px solid {C['border']};
-    padding:30px 34px 26px 40px; margin-bottom:6px;
+    border-top:3px solid {C['text']};
+    border-bottom:3px double {C['text']};
+    padding:26px 34px 22px 42px; margin-bottom:6px;
 }}
 .hero::before {{
     content:""; position:absolute; left:0; top:0; bottom:0; width:6px;
-    background: linear-gradient(180deg,#FF9933 0%,#FF9933 33%,#F4F7FB 33%,#F4F7FB 66%,#138808 66%,#138808 100%);
+    background: linear-gradient(180deg,#FF9933 0%,#FF9933 33%,#FFFFFF 33%,#FFFFFF 66%,#138808 66%,#138808 100%);
 }}
-.hero h1 {{ margin:0; font-size:34px; color:{C['text']}; }}
-.hero .sub {{ color:{C['muted']}; font-size:14.5px; margin-top:7px; }}
-.hero .sub b {{ color:{C['warn']}; }}
+.hero h1 {{ margin:0; font-size:40px; font-weight:800; color:{C['text']}; }}
+.hero .sub {{ color:{C['muted']}; font-size:14.5px; margin-top:6px; }}
+.hero .sub b {{ color:{C['cyan']}; }}
 .pill {{
     display:inline-flex; align-items:center; gap:7px;
     font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.12em;
-    color:{C['cyan']}; background:rgba(34,211,238,0.08);
-    border:1px solid rgba(34,211,238,0.35); border-radius:999px;
+    color:#FFFFFF; background:{C['cyan']};
+    border:1px solid {C['cyan']}; border-radius:3px;
     padding:5px 13px; margin-top:14px; text-transform:uppercase;
 }}
-.dot {{ width:7px;height:7px;border-radius:50%;background:{C['safe']};
-        box-shadow:0 0 8px {C['safe']}; animation:pulse 1.6s infinite; }}
+.dot {{ width:7px;height:7px;border-radius:50%;background:#FFE08A;
+        animation:pulse 1.6s infinite; }}
 @keyframes pulse {{ 0%,100%{{opacity:1}} 50%{{opacity:0.35}} }}
 
-/* ---- Tabs ---- */
-.stTabs [data-baseweb="tab-list"] {{ gap:6px; border-bottom:1px solid {C['border']}; }}
+/* ---- Tabs: newspaper section nav ---- */
+.stTabs [data-baseweb="tab-list"] {{ gap:4px; border-bottom:2px solid {C['text']}; }}
 .stTabs [data-baseweb="tab"] {{
-    font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600;
-    color:{C['muted']}; background:transparent; border-radius:10px 10px 0 0;
-    padding:10px 18px;
+    font-family:'Inter',sans-serif; font-size:14.5px; font-weight:600;
+    color:{C['muted']}; background:transparent; border-radius:4px 4px 0 0;
+    padding:10px 16px;
 }}
 .stTabs [aria-selected="true"] {{
-    color:{C['cyan']} !important; background:rgba(34,211,238,0.07);
+    color:{C['cyan']} !important; background:rgba(196,43,28,0.06);
 }}
 
 /* ---- KPI cards ---- */
 .kpi {{
-    background:linear-gradient(160deg,{C['card2']},{C['card']});
-    border:1px solid {C['border']}; border-radius:16px; padding:18px 20px;
+    background:{C['card']};
+    border:1px solid {C['border']}; border-radius:6px; padding:18px 20px;
     position:relative; overflow:hidden;
+    box-shadow:0 1px 3px rgba(60,40,20,0.06);
 }}
 .kpi::after {{
     content:""; position:absolute; inset:0 0 auto 0; height:3px;
     background:var(--g,{C['cyan']});
 }}
-.kpi .l {{ font-size:11.5px; letter-spacing:0.11em; text-transform:uppercase;
+.kpi .l {{ font-size:11px; letter-spacing:0.11em; text-transform:uppercase;
            color:{C['muted']}; font-weight:600; }}
-.kpi .v {{ font-family:'Space Grotesk'; font-size:29px; font-weight:700;
+.kpi .v {{ font-family:'Playfair Display',serif; font-size:30px; font-weight:700;
            color:{C['text']}; margin-top:5px; }}
 .kpi .d {{ font-family:'JetBrains Mono'; font-size:12px; margin-top:3px; color:var(--g,{C['cyan']}); }}
 
 /* ---- Verdict ---- */
-.verdict {{ border-radius:18px; padding:24px 28px; border:1px solid; margin-top:4px; }}
+.verdict {{ border-radius:6px; padding:24px 28px; border:1px solid; margin-top:4px; background:{C['card']}; }}
 .verdict .tag {{ font-family:'JetBrains Mono'; font-size:11px; letter-spacing:0.16em;
-                 border:1px solid; border-radius:999px; padding:4px 12px; display:inline-block; }}
-.verdict .score {{ font-family:'Space Grotesk'; font-size:52px; font-weight:700; line-height:1.05; margin-top:10px; }}
+                 border:1px solid; border-radius:3px; padding:4px 12px; display:inline-block; }}
+.verdict .score {{ font-family:'Playfair Display',serif; font-size:54px; font-weight:800; line-height:1.05; margin-top:10px; }}
 .verdict .score small {{ font-size:20px; color:{C['muted']}; font-weight:500; }}
 .verdict .desc {{ color:{C['text']}; font-size:15px; margin-top:4px; }}
-.v-high {{ background:linear-gradient(150deg,rgba(251,77,109,0.12),rgba(251,77,109,0.03));
-           border-color:rgba(251,77,109,0.5); }}
-.v-med  {{ background:linear-gradient(150deg,rgba(245,165,36,0.12),rgba(245,165,36,0.03));
-           border-color:rgba(245,165,36,0.5); }}
-.v-low  {{ background:linear-gradient(150deg,rgba(52,211,153,0.12),rgba(52,211,153,0.03));
-           border-color:rgba(52,211,153,0.5); }}
+.v-high {{ background:#FDF1EF; border-color:rgba(166,27,27,0.55); }}
+.v-med  {{ background:#FBF3E4; border-color:rgba(178,94,0,0.5); }}
+.v-low  {{ background:#EFF7F1; border-color:rgba(30,127,79,0.5); }}
 
-/* ---- Evidence view ---- */
+/* ---- Evidence view: annotated newsprint ---- */
 .evidence {{
-    background:{C['card']}; border:1px solid {C['border']}; border-radius:14px;
-    padding:20px 22px; font-size:14.5px; line-height:2.05; color:{C['muted']};
+    background:{C['card']}; border:1px solid {C['border']}; border-radius:6px;
+    padding:20px 22px; font-size:14.5px; line-height:2.05; color:{C['text']};
 }}
 .evidence mark {{
-    background:rgba(251,77,109,0.16); color:#FF9DB0;
-    border:1px solid rgba(251,77,109,0.4); border-radius:6px;
-    padding:1px 7px; font-weight:600;
+    background:rgba(196,43,28,0.12); color:{C['danger']};
+    border-bottom:2px solid {C['cyan']}; border-radius:2px;
+    padding:1px 6px; font-weight:600;
 }}
 .sig {{
     font-family:'JetBrains Mono'; font-size:12.5px;
     background:{C['card']}; border:1px solid {C['border']};
-    border-left:3px solid {C['danger']}; border-radius:8px;
+    border-left:3px solid {C['danger']}; border-radius:4px;
     padding:9px 13px; margin:5px 0; color:{C['text']};
     display:flex; justify-content:space-between; gap:10px;
 }}
@@ -143,15 +142,15 @@ h1,h2,h3 {{ font-family:'Space Grotesk',sans-serif !important; letter-spacing:-0
 
 /* ---- Advisory card ---- */
 .advisory {{
-    background:linear-gradient(160deg,rgba(34,211,238,0.07),rgba(34,211,238,0.015));
-    border:1px solid rgba(34,211,238,0.3); border-radius:14px;
+    background:{C['card2']};
+    border:1px solid {C['border']}; border-left:4px solid {C['cyan']}; border-radius:6px;
     padding:20px 24px; font-size:14.5px; line-height:1.85; color:{C['text']};
 }}
-.advisory .h {{ font-family:'Space Grotesk'; font-weight:700; color:{C['cyan']};
-                font-size:15px; letter-spacing:0.02em; margin-bottom:8px; }}
+.advisory .h {{ font-family:'Playfair Display',serif; font-weight:700; color:{C['cyan']};
+                font-size:16px; margin-bottom:8px; }}
 .helpline {{
-    display:inline-block; font-family:'Space Grotesk'; font-weight:700; font-size:16px;
-    background:{C['danger']}; color:#fff; border-radius:10px;
+    display:inline-block; font-family:'Inter'; font-weight:700; font-size:15px;
+    background:{C['cyan']}; color:#FFFFFF; border-radius:4px;
     padding:8px 18px; margin-top:12px;
 }}
 
@@ -159,19 +158,20 @@ h1,h2,h3 {{ font-family:'Space Grotesk',sans-serif !important; letter-spacing:-0
 .feed {{
     font-family:'JetBrains Mono'; font-size:12.5px;
     background:{C['card']}; border:1px solid {C['border']};
-    border-radius:10px; padding:10px 14px; margin:5px 0;
+    border-radius:4px; padding:10px 14px; margin:5px 0;
     display:flex; gap:12px; align-items:center; color:{C['text']};
 }}
 .feed .id {{ color:{C['safe']}; }}
 .feed .amt {{ margin-left:auto; color:{C['warn']}; font-weight:600; }}
 .sec {{
-    font-family:'Space Grotesk'; font-size:12.5px; font-weight:600;
-    letter-spacing:0.15em; text-transform:uppercase; color:{C['muted']};
+    font-family:'Inter',sans-serif; font-size:12px; font-weight:700;
+    letter-spacing:0.15em; text-transform:uppercase; color:{C['cyan']};
+    border-bottom:1px solid {C['border']}; padding-bottom:5px;
     margin:26px 0 10px 0;
 }}
 .ringrow {{
     display:grid; grid-template-columns: 90px 1fr 130px 150px; gap:12px; align-items:center;
-    background:{C['card']}; border:1px solid {C['border']}; border-radius:10px;
+    background:{C['card']}; border:1px solid {C['border']}; border-radius:4px;
     padding:11px 16px; margin:5px 0; font-size:13.5px; color:{C['text']};
 }}
 .ringrow .mono {{ font-family:'JetBrains Mono'; }}
@@ -492,9 +492,9 @@ with tab1:
                     axis=dict(range=[0, 100], tickcolor=C["muted"]),
                     bar=dict(color=color, thickness=0.3),
                     bgcolor="rgba(0,0,0,0)", borderwidth=0,
-                    steps=[dict(range=[0, 40],  color="rgba(52,211,153,0.10)"),
-                           dict(range=[40, 70], color="rgba(245,165,36,0.10)"),
-                           dict(range=[70, 100],color="rgba(251,77,109,0.12)")],
+                    steps=[dict(range=[0, 40],  color="rgba(30,127,79,0.10)"),
+                           dict(range=[40, 70], color="rgba(178,94,0,0.10)"),
+                           dict(range=[70, 100],color="rgba(166,27,27,0.12)")],
                     threshold=dict(line=dict(color=color, width=3), value=score),
                 )))
             st.plotly_chart(style(fig, 200), use_container_width=True)
@@ -567,7 +567,7 @@ with tab2:
     for u, v in G.edges():
         ex += [pos[u][0], pos[v][0], None]; ey += [pos[u][1], pos[v][1], None]
     fig = go.Figure(go.Scatter(x=ex, y=ey, mode="lines", hoverinfo="none",
-                               line=dict(color="rgba(138,148,172,0.22)", width=1)))
+                               line=dict(color="rgba(122,106,88,0.3)", width=1)))
     for kind, s in KIND.items():
         ns = [n for n, d in G.nodes(data=True) if d["kind"] == kind]
         fig.add_trace(go.Scatter(
@@ -622,7 +622,7 @@ with tab3:
         fig = go.Figure(go.Scatter(
             x=daily["date"], y=daily["n"], mode="lines",
             line=dict(color=C["cyan"], width=2.5, shape="spline"),
-            fill="tozeroy", fillcolor="rgba(34,211,238,0.10)"))
+            fill="tozeroy", fillcolor="rgba(196,43,28,0.10)"))
         st.plotly_chart(style(fig, 300), use_container_width=True)
     with b:
         st.markdown('<div class="sec">Scam type share</div>', unsafe_allow_html=True)
@@ -640,7 +640,7 @@ with tab3:
     city = live.groupby("city")["amount"].sum().sort_values().reset_index()
     fig = go.Figure(go.Bar(
         x=city["amount"]/1e5, y=city["city"], orientation="h",
-        marker=dict(color=city["amount"], colorscale=[[0, "rgba(34,211,238,0.5)"], [1, C["danger"]]]),
+        marker=dict(color=city["amount"], colorscale=[[0, "rgba(196,43,28,0.5)"], [1, C["danger"]]]),
         text=[f"₹{v/1e5:.1f} L" for v in city["amount"]], textposition="outside",
         textfont=dict(family="JetBrains Mono", size=11)))
     fig.update_layout(xaxis_title="₹ lakh")
@@ -730,15 +730,15 @@ with tab4:
             x=["Pred · Safe", "Pred · Scam"], y=["True · Safe", "True · Scam"],
             text=[[tn, fp], [fn, tp]], texttemplate="%{text}",
             textfont=dict(family="Space Grotesk", size=24, color=C["text"]),
-            colorscale=[[0, "#0F1730"], [1, "rgba(34,211,238,0.5)"]], showscale=False))
+            colorscale=[[0, "#FDF6EC"], [1, "rgba(196,43,28,0.5)"]], showscale=False))
         st.plotly_chart(style(fig, 340), use_container_width=True)
     with b:
         st.markdown('<div class="sec">Score separation — safe vs scam</div>', unsafe_allow_html=True)
         fig = go.Figure()
         fig.add_trace(go.Histogram(x=bench[bench.label == 0]["score"], name="Safe messages",
-                                   marker_color="rgba(91,141,239,0.6)", nbinsx=25))
+                                   marker_color="rgba(29,78,137,0.6)", nbinsx=25))
         fig.add_trace(go.Histogram(x=bench[bench.label == 1]["score"], name="Scam messages",
-                                   marker_color="rgba(251,77,109,0.75)", nbinsx=25))
+                                   marker_color="rgba(166,27,27,0.75)", nbinsx=25))
         fig.add_vline(x=thr, line=dict(color=C["warn"], dash="dash"),
                       annotation_text="threshold", annotation_font_color=C["warn"])
         fig.update_layout(barmode="overlay", xaxis_title="Risk score")
@@ -783,13 +783,31 @@ with tab_note:
         img = Image.open(up).convert("RGB")
     elif demo_note:
         rng = np.random.default_rng(5)
-        w, h = 900, int(900 / NOTE_SPEC[denom][0])
-        arr = np.full((h, w, 3), [168, 164, 158], dtype=np.uint8)  # stone grey base
-        arr += rng.integers(-14, 14, arr.shape).astype(np.int16).astype(np.uint8)
-        arr[:, int(w*0.44):int(w*0.455)] = [52, 60, 54]            # security thread band
-        arr[int(h*0.78):int(h*0.95), int(w*0.62):int(w*0.95)] = rng.choice(
-            [[40, 40, 40], [200, 198, 192]], (int(h*0.17), int(w*0.33))).astype(np.uint8)  # serial panel
-        img = Image.fromarray(arr)
+        DEMO_BASE = {"₹500": (168, 164, 158),   # stone grey
+                     "₹200": (233, 196, 106),   # bright yellow
+                     "₹100": (176, 168, 186),   # lavender
+                     "₹2000": (205, 130, 166)}  # magenta
+        w = 1300
+        h = int(w / NOTE_SPEC[denom][0])
+        base = np.array(DEMO_BASE[denom], dtype=np.int16)
+        arr = np.tile(base, (h, w, 1)).astype(np.int16)
+        arr += rng.integers(-16, 16, arr.shape)                    # print-grain noise
+        for i in range(0, h, 26):                                  # guilloche-like bands
+            arr[i:i+2, :, :] -= 12
+        arr[:, int(w*0.445):int(w*0.458), :] = [48, 54, 62]        # security thread
+        for seg in range(0, h, 74):                                # windowed (dashed) look
+            arr[seg:seg+22, int(w*0.445):int(w*0.458), :] = np.minimum(base + 20, 255)
+        yy, xx = np.mgrid[0:h, 0:w]                                # plain portrait zone
+        mask = (((xx - w*0.62) / (w*0.10))**2 + ((yy - h*0.45) / (h*0.30))**2) < 1
+        arr[mask] = (arr[mask] * 0.82).astype(np.int16)
+        r0, r1 = int(h*0.80), int(h*0.94)                          # serial number panel
+        c0, c1 = int(w*0.66), int(w*0.96)
+        arr[r0:r1, c0:c1] = rng.choice(
+            [[36, 36, 36], [210, 208, 202]], (r1 - r0, c1 - c0)).astype(np.int16)
+        img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+        d = ImageDraw.Draw(img)
+        d.text((26, 18), f"FRAUD SHIELD SPECIMEN {denom.replace('₹', 'Rs ')} - NOT LEGAL TENDER",
+               fill=(90, 60, 60))
 
     with cR:
         if img is None:
@@ -886,7 +904,7 @@ with tab_geo:
         mode="markers+text", text=agg["city"], textposition="top center",
         textfont=dict(family="Inter", size=11, color=C["muted"]),
         marker=dict(size=np.sqrt(agg["n"]) * 3.2, color=agg["amt"],
-                    colorscale=[[0, "rgba(34,211,238,0.65)"], [1, "rgba(251,77,109,0.95)"]],
+                    colorscale=[[0, "rgba(29,78,137,0.60)"], [1, "rgba(166,27,27,0.95)"]],
                     line=dict(color=C["bg"], width=1),
                     colorbar=dict(title="₹ at risk", tickfont=dict(color=C["muted"]))),
         hovertext=[f"{r.city}<br>{r.n} complaints · ₹{r.amt/1e5:.1f} L" for r in agg.itertuples()],
@@ -900,7 +918,7 @@ with tab_geo:
         hoverinfo="text"))
     fig.update_geos(
         scope="asia", lataxis_range=[6, 36], lonaxis_range=[66, 98],
-        bgcolor="rgba(0,0,0,0)", landcolor="#0D1428", showland=True,
+        bgcolor="rgba(0,0,0,0)", landcolor="#F3E2CC", showland=True,
         countrycolor=C["border"], showcountries=True,
         coastlinecolor=C["border"], showcoastlines=True,
         lakecolor=C["bg"], showlakes=True)
