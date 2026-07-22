@@ -186,7 +186,7 @@ PLOT = dict(
     margin=dict(l=10, r=10, t=42, b=10),
 )
 def style(fig, h=340, axes=True):
-    fig.update_layout(**PLOT, height=h)
+    fig.update_layout(**PLOT, height=h, autosize=True)
     if axes:
         try:
             fig.update_xaxes(gridcolor=C["border"], zerolinecolor=C["border"])
@@ -501,7 +501,7 @@ with tab1:
                            dict(range=[70, 100],color="rgba(166,27,27,0.12)")],
                     threshold=dict(line=dict(color=color, width=3), value=score),
                 )))
-            st.plotly_chart(style(fig, 200), use_container_width=True)
+            st.plotly_chart(style(fig, 200))
 
             if use_llm:
                 if llm:
@@ -584,7 +584,7 @@ with tab2:
             text=[f"{n}<br>Ring {G.nodes[n]['ring']} · degree {int(G.degree(n))}" for n in ns],
             hoverinfo="text"))
     fig.update_layout(showlegend=True, xaxis=dict(visible=False), yaxis=dict(visible=False))
-    st.plotly_chart(style(fig, 520, axes=False), use_container_width=True)
+    st.plotly_chart(style(fig, 520, axes=False))
 
     st.markdown('<div class="sec">Ring intelligence — prioritised by amount defrauded</div>', unsafe_allow_html=True)
     st.markdown(f"""
@@ -628,7 +628,7 @@ with tab3:
             x=daily["date"].astype(str).tolist(), y=daily["n"].astype(int).tolist(), mode="lines",
             line=dict(color=C["cyan"], width=2.5, shape="spline"),
             fill="tozeroy", fillcolor="rgba(196,43,28,0.10)"))
-        st.plotly_chart(style(fig, 300), use_container_width=True)
+        st.plotly_chart(style(fig, 300))
     with b:
         st.markdown('<div class="sec">Scam type share</div>', unsafe_allow_html=True)
         mix = live.groupby("scam_type")["amount"].sum().reset_index()
@@ -639,7 +639,7 @@ with tab3:
             textfont=dict(family="Inter", color=C["text"])))
         fig.update_layout(annotations=[dict(text="₹ at risk", showarrow=False,
                                             font=dict(family="Space Grotesk", size=14, color=C["muted"]))])
-        st.plotly_chart(style(fig, 300, axes=False), use_container_width=True)
+        st.plotly_chart(style(fig, 300, axes=False))
 
     st.markdown('<div class="sec">Amount defrauded by city</div>', unsafe_allow_html=True)
     city = live.groupby("city")["amount"].sum().sort_values().reset_index()
@@ -649,7 +649,7 @@ with tab3:
         text=[f"₹{v/1e5:.1f} L" for v in city["amount"]], textposition="outside",
         textfont=dict(family="JetBrains Mono", size=11)))
     fig.update_layout(xaxis_title="₹ lakh")
-    st.plotly_chart(style(fig, 380), use_container_width=True)
+    st.plotly_chart(style(fig, 380))
 
     st.markdown('<div class="sec">Incoming complaints — live feed (simulated)</div>', unsafe_allow_html=True)
     if st.button("▶ Simulate live scam campaign", type="primary"):
@@ -736,7 +736,7 @@ with tab4:
             text=[[tn, fp], [fn, tp]], texttemplate="%{text}",
             textfont=dict(family="Space Grotesk", size=24, color=C["text"]),
             colorscale=[[0, "#FDF6EC"], [1, "rgba(196,43,28,0.5)"]], showscale=False))
-        st.plotly_chart(style(fig, 340), use_container_width=True)
+        st.plotly_chart(style(fig, 340))
     with b:
         st.markdown('<div class="sec">Score separation — safe vs scam</div>', unsafe_allow_html=True)
         fig = go.Figure()
@@ -747,7 +747,7 @@ with tab4:
         fig.add_vline(x=thr, line=dict(color=C["warn"], dash="dash"),
                       annotation_text="threshold", annotation_font_color=C["warn"])
         fig.update_layout(barmode="overlay", xaxis_title="Risk score")
-        st.plotly_chart(style(fig, 340), use_container_width=True)
+        st.plotly_chart(style(fig, 340))
 
     misses = bench[(bench.label == 1) & (bench.pred == 0)]
     st.markdown('<div class="sec">Remaining misses (rule engine alone)</div>', unsafe_allow_html=True)
@@ -825,7 +825,7 @@ with tab_note:
                 <div style="font-size:13px;margin-top:4px">Upload a note photo, or run the synthetic demo.</div>
             </div>""", unsafe_allow_html=True)
         else:
-            st.image(img, caption=f"Specimen under analysis · {denom}", use_container_width=True)
+            st.image(img, caption=f"Specimen under analysis · {denom}")
 
     if img is not None:
         g = np.asarray(img.convert("L"), dtype=float)
@@ -931,7 +931,7 @@ with tab_geo:
         coastlinecolor=C["border"], showcoastlines=True,
         lakecolor=C["bg"], showlakes=True)
     fig.update_layout(legend=dict(orientation="h", y=0.02, x=0.02))
-    st.plotly_chart(style(fig, 560, axes=False), use_container_width=True)
+    st.plotly_chart(style(fig, 560, axes=False))
 
     st.markdown('<div class="sec">Patrol & resource prioritisation — ranked hotspots</div>', unsafe_allow_html=True)
     rank = agg.sort_values("amt", ascending=False).reset_index(drop=True)
