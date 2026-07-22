@@ -181,7 +181,6 @@ h1,h2,h3 {{ font-family:'Playfair Display',serif !important; letter-spacing:-0.0
 PLOT = dict(
     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
     font=dict(family="Inter", color=C["muted"], size=12),
-    title_font=dict(family="Space Grotesk", size=15, color=C["text"]),
     legend=dict(bgcolor="rgba(0,0,0,0)"),
     margin=dict(l=10, r=10, t=42, b=10),
 )
