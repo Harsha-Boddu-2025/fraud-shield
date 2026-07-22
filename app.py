@@ -267,10 +267,10 @@ def get_secret(name, default=None):
         return default
 
 def llm_second_opinion(text: str):
-    """Ask the NIM-hosted LLM for a scam verdict. Returns dict or None on any failure."""
+    """Ask the NIM-hosted LLM for a scam verdict. Returns (dict_or_None, reason_str)."""
     key = get_secret("NVIDIA_API_KEY")
     if not key:
-        return None
+        return None, "no key found in st.secrets"
     prompt = (
         "You are a fraud analyst for Indian cybercrime prevention. Analyse the message below "
         "(it may be in English, Hindi, Telugu or mixed/romanized) for scam indicators: digital-arrest "
@@ -290,14 +290,19 @@ def llm_second_opinion(text: str):
                   "temperature": 0.1, "max_tokens": 300},
             timeout=25,
         )
-        r.raise_for_status()
+        if r.status_code != 200:
+            return None, f"HTTP {r.status_code}: {r.text[:200]}"
         raw = r.json()["choices"][0]["message"]["content"]
         raw = re.sub(r"```(?:json)?|```", "", raw).strip()
         out = json.loads(raw[raw.index("{"): raw.rindex("}") + 1])
         out["score"] = int(max(0, min(100, out.get("score", 0))))
-        return out
-    except Exception:
-        return None
+        return out, "ok"
+    except requests.exceptions.Timeout:
+        return None, "request timed out after 25s"
+    except requests.exceptions.ConnectionError as e:
+        return None, f"connection error: {e}"
+    except Exception as e:
+        return None, f"{type(e).__name__}: {e}"
 
 ADVISORIES = {
     "English": {
@@ -469,10 +474,10 @@ with tab1:
 
     if go_btn and text.strip():
         rule_score, hits, highlighted = analyze(text)
-        llm = None
+        llm, llm_reason = None, None
         if use_llm:
             with st.spinner("Consulting NVIDIA NIM LLM…"):
-                llm = llm_second_opinion(text)
+                llm, llm_reason = llm_second_opinion(text)
         score = max(rule_score, llm["score"]) if llm else rule_score
         if score >= 70:  cls, tag, level = "v-high", "HIGH RISK", "high"
         elif score >= 40: cls, tag, level = "v-med", "SUSPICIOUS", "med"
@@ -522,8 +527,8 @@ with tab1:
                             Rule engine {rule_score} · combined verdict takes the higher score</div>
                     </div>""", unsafe_allow_html=True)
                 else:
-                    st.info("LLM unavailable (missing `NVIDIA_API_KEY` in secrets, or API timeout). "
-                            "Showing rule-engine verdict — the demo never depends on the API.", icon="🧠")
+                    st.info(f"LLM unavailable — {llm_reason}. "
+                            "Showing rule-engine verdict; the demo never depends on the API.", icon="🧠")
 
         with b:
             st.markdown('<div class="sec" style="margin-top:0">Evidence — exact phrases that triggered the verdict</div>',
