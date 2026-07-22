@@ -288,7 +288,7 @@ def llm_second_opinion(text: str):
             json={"model": get_secret("NVIDIA_MODEL", NIM_MODEL),
                   "messages": [{"role": "user", "content": prompt}],
                   "temperature": 0.1, "max_tokens": 300},
-            timeout=25,
+            timeout=55,
         )
         if r.status_code != 200:
             return None, f"HTTP {r.status_code}: {r.text[:200]}"
@@ -298,7 +298,7 @@ def llm_second_opinion(text: str):
         out["score"] = int(max(0, min(100, out.get("score", 0))))
         return out, "ok"
     except requests.exceptions.Timeout:
-        return None, "request timed out after 25s"
+        return None, "request timed out after 55s (model may be cold-starting)"
     except requests.exceptions.ConnectionError as e:
         return None, f"connection error: {e}"
     except Exception as e:
@@ -476,7 +476,7 @@ with tab1:
         rule_score, hits, highlighted = analyze(text)
         llm, llm_reason = None, None
         if use_llm:
-            with st.spinner("Consulting NVIDIA NIM LLM…"):
+            with st.spinner("Consulting NVIDIA NIM LLM… (first call can take up to a minute if the model is cold)"):
                 llm, llm_reason = llm_second_opinion(text)
         score = max(rule_score, llm["score"]) if llm else rule_score
         if score >= 70:  cls, tag, level = "v-high", "HIGH RISK", "high"
