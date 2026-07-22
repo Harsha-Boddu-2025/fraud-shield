@@ -258,7 +258,7 @@ def analyze(text: str):
 
 # ---- NVIDIA NIM LLM second opinion (key lives in Streamlit secrets) --------
 NIM_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-NIM_MODEL = "meta/llama-3.3-70b-instruct"
+NIM_MODEL = "meta/llama-3.1-8b-instruct"
 
 def get_secret(name, default=None):
     try:
