@@ -185,10 +185,14 @@ PLOT = dict(
     legend=dict(bgcolor="rgba(0,0,0,0)"),
     margin=dict(l=10, r=10, t=42, b=10),
 )
-def style(fig, h=340):
+def style(fig, h=340, axes=True):
     fig.update_layout(**PLOT, height=h)
-    fig.update_xaxes(gridcolor=C["border"], zerolinecolor=C["border"])
-    fig.update_yaxes(gridcolor=C["border"], zerolinecolor=C["border"])
+    if axes:
+        try:
+            fig.update_xaxes(gridcolor=C["border"], zerolinecolor=C["border"])
+            fig.update_yaxes(gridcolor=C["border"], zerolinecolor=C["border"])
+        except Exception:
+            pass
     return fig
 
 # ============================================================================
@@ -580,7 +584,7 @@ with tab2:
             text=[f"{n}<br>Ring {G.nodes[n]['ring']} · degree {int(G.degree(n))}" for n in ns],
             hoverinfo="text"))
     fig.update_layout(showlegend=True, xaxis=dict(visible=False), yaxis=dict(visible=False))
-    st.plotly_chart(style(fig, 520), use_container_width=True)
+    st.plotly_chart(style(fig, 520, axes=False), use_container_width=True)
 
     st.markdown('<div class="sec">Ring intelligence — prioritised by amount defrauded</div>', unsafe_allow_html=True)
     st.markdown(f"""
@@ -635,7 +639,7 @@ with tab3:
             textfont=dict(family="Inter", color=C["text"])))
         fig.update_layout(annotations=[dict(text="₹ at risk", showarrow=False,
                                             font=dict(family="Space Grotesk", size=14, color=C["muted"]))])
-        st.plotly_chart(style(fig, 300), use_container_width=True)
+        st.plotly_chart(style(fig, 300, axes=False), use_container_width=True)
 
     st.markdown('<div class="sec">Amount defrauded by city</div>', unsafe_allow_html=True)
     city = live.groupby("city")["amount"].sum().sort_values().reset_index()
@@ -927,7 +931,7 @@ with tab_geo:
         coastlinecolor=C["border"], showcoastlines=True,
         lakecolor=C["bg"], showlakes=True)
     fig.update_layout(legend=dict(orientation="h", y=0.02, x=0.02))
-    st.plotly_chart(style(fig, 560), use_container_width=True)
+    st.plotly_chart(style(fig, 560, axes=False), use_container_width=True)
 
     st.markdown('<div class="sec">Patrol & resource prioritisation — ranked hotspots</div>', unsafe_allow_html=True)
     rank = agg.sort_values("amt", ascending=False).reset_index(drop=True)
